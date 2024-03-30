@@ -1,10 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using App.Domain.Identity;
+using Base.Contracts.Domain;
 using Base.Domain;
 
 namespace App.Domain;
 
-public class Recipe : BaseEntityIdMetadata, IDomainAppUser<AppUser>
+public class Recipe : BaseEntityId, IDomainAppUser<AppUser>
 {
     [MaxLength(256)]
     public string Name { get; set; } = default!;
