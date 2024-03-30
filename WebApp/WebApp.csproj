@@ -25,6 +25,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\App.Contracts.DAL\App.Contracts.DAL.csproj" />
       <ProjectReference Include="..\App.DAL.EF\App.DAL.EF.csproj" />
     </ItemGroup>
 
@@ -34,6 +35,19 @@
       <_ContentIncludedByDefault Remove="Views\Recipes\Details.cshtml" />
       <_ContentIncludedByDefault Remove="Views\Recipes\Edit.cshtml" />
       <_ContentIncludedByDefault Remove="Views\Recipes\Index.cshtml" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Areas\Admin\Controllers\" />
+      <Folder Include="Areas\Admin\ViewModels\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <UpToDateCheckInput Remove="Views\Recipes\Create.cshtml" />
+      <UpToDateCheckInput Remove="Views\Recipes\Delete.cshtml" />
+      <UpToDateCheckInput Remove="Views\Recipes\Details.cshtml" />
+      <UpToDateCheckInput Remove="Views\Recipes\Edit.cshtml" />
+      <UpToDateCheckInput Remove="Views\Recipes\Index.cshtml" />
     </ItemGroup>
 
 </Project>
