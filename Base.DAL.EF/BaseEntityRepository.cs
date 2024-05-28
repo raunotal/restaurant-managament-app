@@ -38,10 +38,11 @@ public class BaseEntityRepository<TKey, TDomainEntity, TDalEntity, TDbContext>
     {
         var query = RepoDbSet.AsQueryable();
 
-        if (userId != null && typeof(IDomainAppUserId<TKey>).IsAssignableFrom(typeof(TDomainEntity)))
+        if (userId != null && !userId.Equals(default) &&
+            typeof(IDomainAppUserId<TKey>).IsAssignableFrom(typeof(TDomainEntity)))
         {
             query = query
-                .Include("AppUserId")
+                .Include("AppUser")
                 .Where(entity => ((IDomainAppUserId<TKey>)entity).AppUserId.Equals(userId));
         }
 
@@ -123,5 +124,15 @@ public class BaseEntityRepository<TKey, TDomainEntity, TDalEntity, TDbContext>
         }
 
         return await CreateQuery(userId).Where(e => e.Id.Equals(entity.Id)).ExecuteDeleteAsync();
+    }
+
+    public TDalEntity? FirstOrDefault(TKey id, TKey userId = default, bool noTracking = true)
+    {
+        return Mapper.MapLR(CreateQuery(userId, noTracking).FirstOrDefault(m => m.Id.Equals(id)));
+    }
+
+    public async Task<TDalEntity?> FirstOrDefaultAsync(TKey id, TKey userId = default, bool noTracking = true)
+    {
+        return Mapper.MapLR(await CreateQuery(userId, noTracking).FirstOrDefaultAsync(m => m.Id.Equals(id)));
     }
 }

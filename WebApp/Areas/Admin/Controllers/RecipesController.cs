@@ -1,36 +1,28 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using App.Contracts.DAL.Repositories;
+using App.Contracts.DAL;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using App.DAL.EF;
-using App.DAL.EF.Repositories;
 using App.Domain;
 using Microsoft.AspNetCore.Authorization;
 
 namespace WebApp.Areas.Admin.Controllers
 {
     [Area("Admin")]
-    [Authorize(Roles = "Admin")]
     public class RecipesController : Controller
     {
-        private readonly AppDbContext _context;
-        private readonly IRecipeRepository _repository;
+        private readonly IAppUnitOfWork _unitOfWork;
 
-        public RecipesController(AppDbContext context)
+        public RecipesController(IAppUnitOfWork unitOfWork)
         {
-            _context = context;
-            _repository = new RecipeRepository(context);
+            _unitOfWork = unitOfWork;
         }
 
         // GET: Admin/Recipes
         public async Task<IActionResult> Index()
         {
-            var appDbContext = _context.Recipes.Include(r => r.AppUser);
-            return View(await appDbContext.ToListAsync());
+            var res = await _unitOfWork.Recipes.GetAllAsync();
+            return View(res);
         }
 
         // GET: Admin/Recipes/Details/5
@@ -43,9 +35,8 @@ namespace WebApp.Areas.Admin.Controllers
 
             // var recipe = await _repository.FirstOrDefaultAsync(id.Value);
 
-            var recipe = await _context.Recipes
-                .Include(r => r.AppUser)
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var recipe = await _unitOfWork.Recipes
+                .FirstOrDefaultAsync(id.Value);
             if (recipe == null)
             {
                 return NotFound();
@@ -55,9 +46,9 @@ namespace WebApp.Areas.Admin.Controllers
         }
 
         // GET: Admin/Recipes/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            ViewData["AppUserId"] = new SelectList(_context.Users, "Id", "Id");
+            ViewData["AppUserId"] = new SelectList(await _unitOfWork.AppUsers.GetAllAsync(), "Id", "Id");
             return View();
         }
 
@@ -66,15 +57,17 @@ namespace WebApp.Areas.Admin.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Name,AppUserId,Id")] Recipe recipe)
+        public async Task<IActionResult> Create(Recipe recipe)
         {
             if (ModelState.IsValid)
             {
-                _repository.Add(recipe);
-                await _context.SaveChangesAsync();
+                _unitOfWork.Recipes.Add(recipe);
+                await _unitOfWork.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["AppUserId"] = new SelectList(_context.Users, "Id", "Id", recipe.AppUserId);
+
+            ViewData["AppUserId"] =
+                new SelectList(await _unitOfWork.AppUsers.GetAllAsync(), "Id", "Id", recipe.AppUserId);
             return View(recipe);
         }
 
@@ -86,12 +79,14 @@ namespace WebApp.Areas.Admin.Controllers
                 return NotFound();
             }
 
-            var recipe = await _context.Recipes.FindAsync(id);
+            var recipe = await _unitOfWork.Recipes.FirstOrDefaultAsync(id.Value);
             if (recipe == null)
             {
                 return NotFound();
             }
-            ViewData["AppUserId"] = new SelectList(_context.Users, "Id", "Id", recipe.AppUserId);
+
+            ViewData["AppUserId"] =
+                new SelectList(await _unitOfWork.AppUsers.GetAllAsync(), "Id", "Id", recipe.AppUserId);
             return View(recipe);
         }
 
@@ -100,7 +95,7 @@ namespace WebApp.Areas.Admin.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(Guid id, [Bind("Name,AppUserId,Id")] Recipe recipe)
+        public async Task<IActionResult> Edit(Guid id, Recipe recipe)
         {
             if (id != recipe.Id)
             {
@@ -111,12 +106,12 @@ namespace WebApp.Areas.Admin.Controllers
             {
                 try
                 {
-                    _context.Update(recipe);
-                    await _context.SaveChangesAsync();
+                    _unitOfWork.Recipes.Update(recipe);
+                    await _unitOfWork.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!RecipeExists(recipe.Id))
+                    if (!await _unitOfWork.Recipes.ExistsAsync(recipe.Id))
                     {
                         return NotFound();
                     }
@@ -125,9 +120,12 @@ namespace WebApp.Areas.Admin.Controllers
                         throw;
                     }
                 }
+
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["AppUserId"] = new SelectList(_context.Users, "Id", "Id", recipe.AppUserId);
+
+            ViewData["AppUserId"] =
+                new SelectList(await _unitOfWork.AppUsers.GetAllAsync(), "Id", "Id", recipe.AppUserId);
             return View(recipe);
         }
 
@@ -139,9 +137,8 @@ namespace WebApp.Areas.Admin.Controllers
                 return NotFound();
             }
 
-            var recipe = await _context.Recipes
-                .Include(r => r.AppUser)
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var recipe = await _unitOfWork.Recipes
+                .FirstOrDefaultAsync(id.Value);
             if (recipe == null)
             {
                 return NotFound();
@@ -155,19 +152,14 @@ namespace WebApp.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(Guid id)
         {
-            var recipe = await _context.Recipes.FindAsync(id);
+            var recipe = await _unitOfWork.Recipes.FirstOrDefaultAsync(id);
             if (recipe != null)
             {
-                _context.Recipes.Remove(recipe);
+                await _unitOfWork.Recipes.RemoveAsync(id);
             }
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool RecipeExists(Guid id)
-        {
-            return _context.Recipes.Any(e => e.Id == id);
         }
     }
 }

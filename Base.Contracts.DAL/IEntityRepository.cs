@@ -16,11 +16,11 @@ public interface IEntityRepository<TEntity, TKey>
     int Delete(TEntity entity, TKey? userId = default);
     int Delete(TKey id, TKey? userId = default);
     
-    // TEntity? FirstOrDefault(TKey id, TKey? userId = default, bool noTracking = false);
+    TEntity? FirstOrDefault(TKey id, TKey? userId = default, bool noTracking = false);
     IEnumerable<TEntity>GetAll(TKey? userId = default, bool noTracking = false);
     bool Exists(TKey id, TKey? userId = default);
     
-    // Task<TEntity?> FirstOrDefaultAsync(TKey id, TKey? userId = default, bool noTracking = false);
+    Task<TEntity?> FirstOrDefaultAsync(TKey id, TKey? userId = default, bool noTracking = false);
     Task<IEnumerable<TEntity>> GetAllAsync(TKey? userId = default, bool noTracking = false);
     Task<bool> ExistsAsync(TKey id, TKey? userId = default);
     Task<int> RemoveAsync(TEntity entity, TKey? userId = default);

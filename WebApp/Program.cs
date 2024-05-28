@@ -1,3 +1,4 @@
+using App.Contracts.DAL;
 using App.DAL.EF;
 using App.Domain.Identity;
 using Microsoft.AspNetCore.Identity;
@@ -10,6 +11,9 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
                        throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
+
+builder.Services.AddScoped<IAppUnitOfWork, AppUnitOfWork>();
+
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services
