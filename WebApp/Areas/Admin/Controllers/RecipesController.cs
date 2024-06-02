@@ -4,7 +4,9 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using App.DAL.EF;
 using App.Domain;
+using App.Domain.Identity;
 using Microsoft.AspNetCore.Authorization;
+using WebApp.Areas.Admin.ViewModels;
 
 namespace WebApp.Areas.Admin.Controllers
 {
@@ -48,8 +50,12 @@ namespace WebApp.Areas.Admin.Controllers
         // GET: Admin/Recipes/Create
         public async Task<IActionResult> Create()
         {
-            ViewData["AppUserId"] = new SelectList(await _unitOfWork.AppUsers.GetAllAsync(), "Id", "Id");
-            return View();
+            var viewModel = new RecipeCreateViewModel()
+            {
+                AppUserSelectList = new SelectList(await _unitOfWork.AppUsers.GetAllAsync(), nameof(AppUser.Id),
+                    nameof(AppUser.Email))
+            };
+            return View(viewModel);
         }
 
         // POST: Admin/Recipes/Create
@@ -57,18 +63,19 @@ namespace WebApp.Areas.Admin.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Recipe recipe)
+        public async Task<IActionResult> Create(RecipeCreateViewModel viewModel)
         {
             if (ModelState.IsValid)
             {
-                _unitOfWork.Recipes.Add(recipe);
+                _unitOfWork.Recipes.Add(viewModel.Recipe);
                 await _unitOfWork.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
 
-            ViewData["AppUserId"] =
-                new SelectList(await _unitOfWork.AppUsers.GetAllAsync(), "Id", "Id", recipe.AppUserId);
-            return View(recipe);
+            viewModel.AppUserSelectList =
+                new SelectList(await _unitOfWork.AppUsers.GetAllAsync(), nameof(AppUser.Id),
+                    nameof(AppUser.Email), viewModel.Recipe.AppUserId);
+            return View(viewModel);
         }
 
         // GET: Admin/Recipes/Edit/5
